@@ -14,17 +14,15 @@ router
 router
   .route("/showMe")
   .get(authMiddleware.authenticateUser, userController.showCurrentUser);
-router.route("/updateUser").patch(userController.updateUser);
+router
+  .route("/updateUser")
+  .patch(authMiddleware.authenticateUser, userController.updateUser);
 router
   .route("/updateUserPassword")
   .patch(authMiddleware.authenticateUser, userController.updateUserPassword);
 
 router
   .route("/:id")
-  .get(
-    authMiddleware.authenticateUser,
-    authMiddleware.authorizePermissions("admin", "owner"),
-    userController.getSingleUser
-  );
+  .get(authMiddleware.authenticateUser, userController.getSingleUser);
 
 module.exports = router;

@@ -1,6 +1,8 @@
 const User = require("../models/userModel");
 const { StatusCodes } = require("http-status-codes");
 const CustomError = require("../errors/index");
+const jwtMethod = require("../utils/jwt");
+const checkPermissions = require("../utils/checkPermissions");
 
 exports.getAllUsers = async (req, res) => {
   // console.log(req.user);
@@ -18,6 +20,7 @@ exports.getSingleUser = async (req, res) => {
   if (!user) {
     throw new CustomError.NotFoundError("No user found");
   }
+  checkPermissions(req.user, id);
   res.status(StatusCodes.OK).json({
     user,
   });
@@ -26,11 +29,6 @@ exports.showCurrentUser = async (req, res) => {
   const { user } = req;
   res.status(StatusCodes.OK).json({
     user,
-  });
-};
-exports.updateUser = async (req, res) => {
-  res.status(StatusCodes.OK).json({
-    msg: "ok",
   });
 };
 exports.updateUserPassword = async (req, res) => {
@@ -48,5 +46,31 @@ exports.updateUserPassword = async (req, res) => {
   await user.save();
   res.status(StatusCodes.OK).json({
     user,
+  });
+};
+
+exports.updateUser = async (req, res) => {
+  const { userID } = req.user;
+  const { name, email } = req.body;
+  if (!name || !email) {
+    throw new CustomError.BadRequestError(
+      "Please provide informations to update"
+    );
+  }
+  const user = await User.findByIdAndUpdate(userID, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  await user.save();
+  const token = jwtMethod.createJwt({
+    name: user.name,
+    userID: user._id,
+    role: user.role,
+  });
+  jwtMethod.attachCookiesToResponse({ res, token });
+
+  res.status(StatusCodes.OK).json({
+    msg: "Updated",
+    token,
   });
 };
