@@ -84,3 +84,12 @@ exports.updateReview = async (req, res) => {
     msg: "Review updated",
   });
 };
+
+exports.getSingleProductReviews = async (req, res) => {
+  const { id } = req.params;
+  const reviews = await Review.find({ product: id });
+  res.status(StatusCodes.OK).json({
+    results: reviews.length,
+    reviews,
+  });
+};

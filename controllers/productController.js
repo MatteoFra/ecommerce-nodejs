@@ -22,7 +22,7 @@ exports.createProduct = async (req, res) => {
 
 exports.getSingleProduct = async (req, res) => {
   const productsID = req.params.id;
-  const product = await Product.findById(productsID);
+  const product = await Product.findById(productsID).populate("reviews");
   if (!product) {
     throw new CustomError.NotFoundError("No product found with that id");
   }

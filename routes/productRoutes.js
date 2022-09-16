@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const productController = require("../controllers/productController");
+const reviewController = require("../controllers/reviewController");
 const authMiddleware = require("../middleware/authentication");
 
 router
@@ -32,5 +33,7 @@ router
     authMiddleware.authorizePermissions("admin", "owner"),
     productController.deleteProduct
   );
+
+router.route("/:id/reviews").get(reviewController.getSingleProductReviews);
 
 module.exports = router;
