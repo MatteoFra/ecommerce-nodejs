@@ -4,6 +4,8 @@ const CustomError = require("../errors/index");
 const jwtMethod = require("../utils/jwt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
+const sendVerificationEmail = require("../utils/sendVerificationEmail");
 
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -19,12 +21,7 @@ exports.register = async (req, res) => {
       "Sorry could not register, try again !"
     );
   }
-  // const token = jwtMethod.createJwt({
-  //   name,
-  //   userID: user._id,
-  //   role: user.role,
-  // });
-  // jwtMethod.attachCookiesToResponse({ res, token });
+  await sendEmail();
 
   res.status(StatusCodes.CREATED).json({
     msg: "Success! Please check your email",
