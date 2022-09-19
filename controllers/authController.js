@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const sendVerificationEmail = require("../utils/sendVerificationEmail");
 const sendResetPasswordEmail = require("../utils/sendResetPasswordEmail");
 const { createJwt, attachCookiesToResponse } = require("../utils/jwt");
+const hashString = require("../utils/createHash");
 
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -151,13 +152,32 @@ exports.forgotPassword = async (req, res) => {
 
   const tenMinutes = 1000 * 60 * 10;
   const passwordTokenExpirationDate = new Date(Date.now() + tenMinutes);
-  user.passwordToken = passwordToken;
+  user.passwordToken = hashString(passwordToken);
   user.passwordTokenExpirationDate = passwordTokenExpirationDate;
   await user.save();
   res
     .status(StatusCodes.OK)
     .json({ msg: "Please check your email to reset your password" });
 };
+
 exports.resetPassword = async (req, res) => {
+  const { token, email, password } = req.body;
+  if (!token || !email || !password) {
+    throw new CustomError.BadRequestError("Invalid credentials");
+  }
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new CustomError.BadRequestError("no user found with that email");
+  }
+  const currentDate = new Date();
+  if (
+    user.passwordToken === hashString(token) &&
+    user.passwordTokenExpirationDate > currentDate
+  ) {
+    user.password = password;
+    user.passwordToken = null;
+    user.passwordTokenExpirationDate = null;
+    await user.save();
+  }
   res.status(StatusCodes.OK).json({ msg: "ok" });
 };
