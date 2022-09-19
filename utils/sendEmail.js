@@ -1,15 +1,14 @@
 const nodemailer = require("nodemailer");
-const nodemailerConfid = require("./nodemailerConfig");
+const nodemailerConfig = require("./nodemailerConfig");
 
 const sendEmail = async ({ to, subject, html }) => {
   let testAccount = await nodemailer.createTestAccount();
-  const transporter = nodemailer.createTransport(nodemailerConfid);
+  const transporter = nodemailer.createTransport(nodemailerConfig);
 
   return transporter.sendMail({
     from: '"Fred Foo 👻" <foo@example.com>',
-    to: "bar@example.com, baz@example.com",
+    to,
     subject,
-    text,
     html,
   });
 };

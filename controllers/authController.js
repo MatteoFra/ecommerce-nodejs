@@ -21,7 +21,8 @@ exports.register = async (req, res) => {
       "Sorry could not register, try again !"
     );
   }
-  await sendEmail();
+  const origin = process.env.ORIGIN;
+  await sendVerificationEmail(name, email, verificationToken, origin);
 
   res.status(StatusCodes.CREATED).json({
     msg: "Success! Please check your email",

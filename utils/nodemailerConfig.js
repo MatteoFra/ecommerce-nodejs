@@ -1,8 +1,8 @@
 module.exports = {
-  host: "smtp.ethereal.email",
-  port: 587,
+  host: process.env.NODEMAILER_HOST,
+  port: process.env.NODEMAILER_PORT,
   auth: {
-    user: "estella.hagenes42@ethereal.email",
-    pass: "n83jBaah5pcqA5akWy",
+    user: process.env.NODEMAILER_USER,
+    pass: process.env.NODEMAILER_PASS,
   },
 };
