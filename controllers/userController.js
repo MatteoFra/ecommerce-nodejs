@@ -26,7 +26,8 @@ exports.getSingleUser = async (req, res) => {
   });
 };
 exports.showCurrentUser = async (req, res) => {
-  const { user } = req;
+  const { payload } = req.user;
+  const user = payload;
   res.status(StatusCodes.OK).json({
     user,
   });

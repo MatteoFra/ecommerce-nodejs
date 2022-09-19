@@ -1,11 +1,16 @@
 const User = require("../models/userModel");
+const Token = require("../models/tokenModel");
 const { StatusCodes } = require("http-status-codes");
 const CustomError = require("../errors/index");
-const jwtMethod = require("../utils/jwt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
 const sendVerificationEmail = require("../utils/sendVerificationEmail");
+const {
+  createJwt,
+  attachCookiesToResponse,
+  isTokenvalid,
+} = require("../utils/jwt");
 
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -48,14 +53,43 @@ exports.login = async (req, res) => {
       "Please verify your email to login"
     );
   }
-  const token = jwtMethod.createJwt({
+  const token = createJwt({
     name: user.name,
     userID: user._id,
     role: user.role,
   });
-  jwtMethod.attachCookiesToResponse({ res, token });
+
+  // create refresh token
+  let refreshToken = "";
+
+  const existingToken = await Token.findOne({ user: user._id });
+
+  if (existingToken) {
+    const { isValid } = existingToken;
+    if (!isValid) {
+      throw new CustomError.UnauthenticatedError("Invalid credentials");
+    }
+    refreshToken = existingToken.refreshToken;
+    attachCookiesToResponse({ res, user, refreshToken });
+    res.status(StatusCodes.OK).json({
+      user,
+      // tokenModel,
+    });
+    return;
+  }
+
+  // check for existing token
+  refreshToken = crypto.randomBytes(40).toString("hex");
+  const userAgent = req.headers["user-agent"];
+  const ip = req.ip;
+  const userToken = { refreshToken, userAgent, ip, user: user._id };
+
+  await Token.create(userToken);
+
+  attachCookiesToResponse({ res, user, refreshToken });
   res.status(StatusCodes.OK).json({
     user,
+    // tokenModel,
   });
 };
 
