@@ -4,7 +4,6 @@ const { isTokenvalid, attachCookiesToResponse } = require("../utils/jwt");
 
 exports.authenticateUser = async (req, res, next) => {
   const { accessToken, refreshToken } = req.signedCookies;
-  console.log(accessToken, refreshToken);
   // const token = req.signedCookies.token;
   // if (!token) {
   //   throw new CustomError.UnauthenticatedError("You are not logged in");

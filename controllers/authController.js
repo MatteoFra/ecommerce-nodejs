@@ -4,13 +4,9 @@ const { StatusCodes } = require("http-status-codes");
 const CustomError = require("../errors/index");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const sendEmail = require("../utils/sendEmail");
 const sendVerificationEmail = require("../utils/sendVerificationEmail");
-const {
-  createJwt,
-  attachCookiesToResponse,
-  isTokenvalid,
-} = require("../utils/jwt");
+const sendResetPasswordEmail = require("../utils/sendResetPasswordEmail");
+const { createJwt, attachCookiesToResponse } = require("../utils/jwt");
 
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -94,10 +90,18 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  res.cookie("token", " ", {
+  const userID = req.user.payload._id;
+  const token = await Token.findOneAndDelete({ user: userID });
+  res.cookie("accessToken", " ", {
     httpOnly: true,
-    expires: new Date(Date.now() + 1000),
+    expires: new Date(Date.now()),
   });
+
+  res.cookie("refreshToken", " ", {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+
   res.status(StatusCodes.OK).json({
     msg: "logout",
   });
@@ -124,4 +128,36 @@ exports.verifyEmail = async (req, res) => {
     verificationToken,
     user,
   });
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    throw new CustomError.BadRequestError("Please provide email");
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new CustomError.BadRequestError("No user found with that email");
+  }
+  const passwordToken = crypto.randomBytes(70).toString("hex");
+
+  await sendResetPasswordEmail({
+    name: user.name,
+    email: user.email,
+    token: passwordToken,
+    origin: process.env.ORIGIN,
+  });
+
+  const tenMinutes = 1000 * 60 * 10;
+  const passwordTokenExpirationDate = new Date(Date.now() + tenMinutes);
+  user.passwordToken = passwordToken;
+  user.passwordTokenExpirationDate = passwordTokenExpirationDate;
+  await user.save();
+  res
+    .status(StatusCodes.OK)
+    .json({ msg: "Please check your email to reset your password" });
+};
+exports.resetPassword = async (req, res) => {
+  res.status(StatusCodes.OK).json({ msg: "ok" });
 };
